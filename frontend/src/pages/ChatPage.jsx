@@ -2,11 +2,20 @@ import { useState, useCallback } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import useDebateStore from '../store/debateStore'
 import { debateAPI } from '../services/api'
-import Navbar          from '../components/layout/Navbar'
-import Sidebar         from '../components/layout/Sidebar'
-import ChatArea        from '../components/chat/ChatArea'
-import ChatAreaStream  from '../components/chat/ChatArea.stream'
- 
+import Navbar from '../components/layout/Navbar'
+import Sidebar from '../components/layout/Sidebar'
+import ChatArea from '../components/chat/ChatArea'
+import ChatAreaStream from '../components/chat/ChatArea.stream'
+import SettingsModal from '../components/ui/SettingsModal'
+
+/**
+ * CHATPAGE
+ * 
+ * Changes:
+ * - Added Settings modal integration
+ * - Improved layout with CSS variables
+ * - Better responsive design
+ */
 export default function ChatPage() {
   const { isAuthenticated } = useAuth()
   const {
@@ -17,21 +26,21 @@ export default function ChatPage() {
     setTyping, isTyping,
     prependSession, updateSessionInHistory,
     startNewSession,
-    streamingEnabled,   // NEW: from store
+    streamingEnabled,
   } = useDebateStore()
- 
+
   const [sidebarOpen, setSidebarOpen] = useState(false)
- 
+  const [settingsOpen, setSettingsOpen] = useState(false)
+
   /**
    * Standard (non-streaming) sendMessage.
    * Only used when streamingEnabled === false.
-   * The streaming ChatArea manages its own fetch internally.
    */
   const sendMessage = useCallback(async (text) => {
     if (!text.trim() || isTyping) return
     addUserMessage(text)
     setTyping(true)
- 
+
     try {
       const { data } = await debateAPI.sendMessage({
         message:      text,
@@ -39,11 +48,11 @@ export default function ChatPage() {
         language:     'en',
         debate_mode:  currentDebateMode,
       })
- 
+
       const isNew = !currentSessionId
       setCurrentSessionId(data.session_id)
       if (data.stage !== currentStage) setCurrentStage(data.stage)
- 
+
       addAssistantMessage({
         id:        data.message_id,
         role:      'assistant',
@@ -52,7 +61,7 @@ export default function ChatPage() {
         citations: data.citations || [],
         created_at: new Date().toISOString(),
       })
- 
+
       if (isNew && isAuthenticated) {
         prependSession({
           id:            data.session_id,
@@ -93,12 +102,12 @@ export default function ChatPage() {
     addUserMessage, addAssistantMessage, setTyping, setCurrentSessionId,
     setCurrentStage, prependSession, updateSessionInHistory,
   ])
- 
+
   return (
     <div style={styles.container}>
       <Navbar
         onMenuClick={() => setSidebarOpen(true)}
-        streamingEnabled={streamingEnabled}  // pass down for toggle UI
+        onSettingsClick={() => setSettingsOpen(true)}
       />
       <div style={styles.body}>
         <Sidebar
@@ -106,33 +115,41 @@ export default function ChatPage() {
           onClose={() => setSidebarOpen(false)}
           onNewSession={startNewSession}
         />
- 
+
         {/* Switch between streaming and standard ChatArea */}
-        {streamingEnabled
-          ? (
-            <ChatAreaStream
-              onSendMessage={sendMessage}  // kept for API compat
-              isTyping={isTyping}
-            />
-          ) : (
-            <ChatArea
-              onSendMessage={sendMessage}
-              isTyping={isTyping}
-            />
-          )
-        }
+        {streamingEnabled ? (
+          <ChatAreaStream
+            onSendMessage={sendMessage}
+            isTyping={isTyping}
+          />
+        ) : (
+          <ChatArea
+            onSendMessage={sendMessage}
+            isTyping={isTyping}
+          />
+        )}
       </div>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
     </div>
   )
 }
- 
+
+/* ── Styles ───────────────────────────────────────────────────────────────── */
 const styles = {
   container: {
-    display: 'flex', flexDirection: 'column',
-    height: '100vh', background: '#0f1117',
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh',
+    background: 'var(--bg-primary)',
   },
   body: {
-    display: 'flex', flex: 1, overflow: 'hidden',
+    display: 'flex',
+    flex: 1,
+    overflow: 'hidden',
   },
 }
- 

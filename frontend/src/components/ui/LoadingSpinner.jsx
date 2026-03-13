@@ -1,30 +1,66 @@
+import { Loader2 } from 'lucide-react'
+
 /**
- * FIX [FE-04]: Used during auth initialization to prevent the flash of
- * the login page that occurred before the auth state was determined.
+ * IMPROVED LOADINGSPIINNER
+ * 
+ * Changes:
+ * - Updated to teal accent color
+ * - Uses Lucide icon for consistency
+ * - Better sizing options
+ * - Accessibility improvements
  */
-export default function LoadingSpinner({ fullScreen = false, message = '' }) {
+export default function LoadingSpinner({ 
+  fullScreen = false, 
+  message = '',
+  size = 'md'
+}) {
+  const sizeMap = {
+    sm: 20,
+    md: 32,
+    lg: 48,
+    xl: 64,
+  }
+  
+  const spinnerSize = sizeMap[size] || sizeMap.md
+
   if (fullScreen) {
     return (
-      <div style={styles.fullScreen}>
-        <div style={styles.spinnerLg} />
+      <div 
+        style={styles.fullScreen}
+        role="status"
+        aria-live="polite"
+        aria-label={message || 'Loading'}
+      >
+        <Loader2 
+          size={spinnerSize} 
+          style={{ 
+            animation: 'spin 1s linear infinite',
+            color: 'var(--accent-primary)'
+          }} 
+        />
         {message && <p style={styles.message}>{message}</p>}
       </div>
     )
   }
-  return <div style={styles.spinner} />
+
+  return (
+    <div 
+      style={styles.inline}
+      role="status"
+      aria-label="Loading"
+    >
+      <Loader2 
+        size={spinnerSize} 
+        style={{ 
+          animation: 'spin 1s linear infinite',
+          color: 'var(--accent-primary)'
+        }} 
+      />
+    </div>
+  )
 }
 
-const spin = `
-  @keyframes spin { to { transform: rotate(360deg); } }
-`
-
-// Inject keyframes once
-if (typeof document !== 'undefined') {
-  const styleEl = document.createElement('style')
-  styleEl.textContent = spin
-  document.head.appendChild(styleEl)
-}
-
+/* ── Styles ───────────────────────────────────────────────────────────────── */
 const styles = {
   fullScreen: {
     display: 'flex',
@@ -32,29 +68,17 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     height: '100vh',
-    background: '#0f1117',
+    background: 'var(--bg-primary)',
     gap: 16,
   },
-  spinnerLg: {
-    width: 40,
-    height: 40,
-    border: '3px solid #2a2d38',
-    borderTop: '3px solid #d4a853',
-    borderRadius: '50%',
-    animation: 'spin 0.8s linear infinite',
-  },
-  spinner: {
-    width: 24,
-    height: 24,
-    border: '2px solid #2a2d38',
-    borderTop: '2px solid #d4a853',
-    borderRadius: '50%',
-    animation: 'spin 0.8s linear infinite',
+  inline: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   message: {
-    color: '#8b8fa8',
+    color: 'var(--text-muted)',
     fontSize: 14,
     margin: 0,
   },
 }
-
